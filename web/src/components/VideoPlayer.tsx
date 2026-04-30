@@ -46,13 +46,27 @@ export default function VideoPlayer({ videos }: Props) {
   if (videos.length === 0) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black">
-        <p className="text-2xl text-white/50">No videos available</p>
+        <p className="text-2xl text-white/50">Бичлэг байхгүй байна</p>
       </div>
     );
   }
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   return (
-    <div className="h-screen w-screen bg-black">
+    <div
+      ref={containerRef}
+      className="h-screen w-screen bg-black"
+      onDoubleClick={toggleFullscreen}
+    >
       <video
         key={`${videos[currentIndex]}-${retryKey}`}
         className="h-full w-full object-cover"
