@@ -7,7 +7,9 @@ interface Props {
 export default function VideoPlayer({ videos }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
+  const [buffering, setBuffering] = useState(true);
   const retryTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Reset index if it's out of bounds after playlist change
   useEffect(() => {
@@ -51,8 +53,6 @@ export default function VideoPlayer({ videos }: Props) {
     );
   }
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen();
@@ -64,18 +64,27 @@ export default function VideoPlayer({ videos }: Props) {
   return (
     <div
       ref={containerRef}
-      className="h-screen w-screen bg-black"
+      className="relative h-screen w-screen bg-black"
       onDoubleClick={toggleFullscreen}
     >
+      {buffering && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-white" />
+        </div>
+      )}
       <video
         key={`${videos[currentIndex]}-${retryKey}`}
         className="h-full w-full object-cover"
-        src={`/videos/${videos[currentIndex]}`}
+        src={`/videos/${encodeURIComponent(videos[currentIndex])}`}
         autoPlay
         muted
         playsInline
+        preload="auto"
         onEnded={handleEnded}
         onError={handleError}
+        onWaiting={() => setBuffering(true)}
+        onPlaying={() => setBuffering(false)}
+        onCanPlay={() => setBuffering(false)}
       />
     </div>
   );

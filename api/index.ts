@@ -34,7 +34,7 @@ const upload = multer({
       cb(new Error(`Invalid file type: ${ext}`));
     }
   },
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB
+  limits: { fileSize: 5 * 1024 * 1024 * 1024 }, // 5 GB
 });
 
 app.get("/api/videos", (_req, res) => {

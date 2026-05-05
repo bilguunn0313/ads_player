@@ -6,7 +6,10 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": "http://localhost:3000",
-      "/videos": "http://localhost:3000",
+      "/videos": {
+        target: "http://localhost:3000",
+        timeout: 600000,
+      },
     },
   },
 });
