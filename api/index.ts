@@ -89,6 +89,11 @@ if (fs.existsSync(webDist)) {
   });
 }
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running at http://0.0.0.0:${PORT}`);
 });
+
+// Allow large uploads on slow connections (30 minutes)
+server.requestTimeout = 30 * 60 * 1000;
+server.headersTimeout = 31 * 60 * 1000;
+server.keepAliveTimeout = 30 * 60 * 1000;

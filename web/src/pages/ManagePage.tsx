@@ -26,6 +26,7 @@ export default function ManagePage() {
   const [videos, setVideos] = useState<string[]>([]);
   const [durations, setDurations] = useState<Record<string, number>>({});
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -57,23 +58,51 @@ export default function ManagePage() {
     if (!file) return;
 
     setUploading(true);
+    setUploadProgress(0);
     setError(null);
 
     const form = new FormData();
     form.append("video", file);
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: form });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Байршуулалт амжилтгүй");
-      }
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/upload");
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setUploadProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              reject(new Error(data.error || "Байршуулалт амжилтгүй"));
+            } catch {
+              reject(new Error("Байршуулалт амжилтгүй"));
+            }
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Сүлжээний алдаа - дахин оролдоно уу"));
+        xhr.ontimeout = () => reject(new Error("Хугацаа дууссан - дахин оролдоно уу"));
+
+        // 30 minute timeout for large files
+        xhr.timeout = 30 * 60 * 1000;
+        xhr.send(form);
+      });
+
       if (fileInput.current) fileInput.current.value = "";
       await fetchVideos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Байршуулалт амжилтгүй");
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -124,9 +153,23 @@ export default function ManagePage() {
             disabled={uploading}
             className="rounded bg-blue-600 px-5 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50 transition"
           >
-            {uploading ? "Байршуулж байна..." : "Байршуулах"}
+            {uploading ? `${uploadProgress}%` : "Байршуулах"}
           </button>
         </form>
+
+        {uploading && (
+          <div className="mb-4">
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <p className="text-xs text-white/50 mt-1">
+              Байршуулж байна... {uploadProgress}%
+            </p>
+          </div>
+        )}
 
         {error && (
           <p className="mb-4 rounded bg-red-900/50 px-4 py-2 text-sm text-red-300">
