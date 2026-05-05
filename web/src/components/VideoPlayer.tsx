@@ -77,7 +77,6 @@ export default function VideoPlayer({ videos }: Props) {
         className="h-full w-full object-cover"
         src={`/videos/${encodeURIComponent(videos[currentIndex])}`}
         autoPlay
-        muted
         loop={videos.length === 1}
         playsInline
         preload="auto"
